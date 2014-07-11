@@ -1,6 +1,7 @@
 #http://www.daviddurman.com/flexi-color-picker/#
 
 #https://vis4.net/blog/posts/mastering-multi-hued-color-scales/
+#https://vis4.net/labs/multihue/#colors=lightyellow,lightpink,green,cadetblue|steps=8|bez=1|coL=1
 
 require(shiny)
 require(magrittr)
@@ -38,7 +39,11 @@ tags %$%
                 document.getElementById("picker"),
                 function(hex, hsv, rgb) {
                   document.getElementById("color_row").style.backgroundColor = hex;
-                  console.log(scheme.from_hex( hex.replace("#", "") ).colors() )
+                  var bezInterpolator = chroma.interpolate.bezier(scheme.from_hex( hex.replace("#", "") ).colors().map(function(col){return "#" + col}))
+                  var scale = chroma.scale(bezInterpolator)
+                                .domain([0,10],9)
+                                .correctLightness(true);
+                  console.log(d3.range(0,10,1).map(function(d){return scale(d).hex()}));
                 });
         '
       )
