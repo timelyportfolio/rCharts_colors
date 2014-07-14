@@ -7,7 +7,7 @@
   <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
   <script src="js/colorpicker.js"></script>
   <script src="js/chroma.js"></script>
-  <script src="js/color-scheme.js"></script>
+  <script src="js/color-scheme.min.js"></script>
   </head>
   <body>
     <div class="container">
@@ -16,7 +16,7 @@
           <div id="picker" class="col-md-10" style="height:200px"></div>
           <div id="slide" class="col-md-2" style="height:200px"></div>
         </div>
-        <div class="col-md-1">
+        <div class="col-md-2">
           <div class="btn-group">
             <button type="button" id="scheme_selection" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
               Monochromatic
@@ -43,31 +43,83 @@
           </div>
           Steps
           <input id="steps" checked="checked" type="number" value="9" style="width: 40px;"/>
+          <label class="checkbox">
+            <input id="bez" type="checkbox"/>
+            Bezier
+          </label>
+          <label class="checkbox">
+            <input id="coL" type="checkbox"/>
+            Lightness
+          </label>
         </div>
+        <div class="col-md-7" id="palette"></div>
       </div>
       <div id="chart_row" class="row"></div>
     </div>
     <script>
+              d3.selectAll("input").on("change",function(){
+                updateColors(  );
+              });
               d3.selectAll("#scheme_buttons li a").on("click",function(){
                 var selText = $(this).text();
                $(this).parents(".btn-group").find(".dropdown-toggle").html(selText+" <span class='caret'></span>");
+               updateColors( );
               })
-              var scheme = new ColorScheme;
+
               ColorPicker(
                 document.getElementById("slide"),
                 document.getElementById("picker"),
                 function(hex, hsv, rgb) {
-                  document.getElementById("color_row").style.backgroundColor = hex;
-                  var bezInterpolator = chroma.interpolate.bezier(
-                      scheme.from_hex( hex.replace("#", "") )
-                      .scheme(d3.select("#scheme_selection").text().toLowerCase().replace(/[ \t\r\n]+/g,""))
-                      .colors().map(function(col){return "#" + col})
-                  )
-                  var scale = chroma.scale(bezInterpolator)
-                                .domain([0,+d3.select("#steps")[0][0].value],d3.select("#steps")[0][0].value)
-                                .correctLightness(true);
-                  console.log(d3.range(0,d3.select("#steps")[0][0].value,1).map(function(d){return scale(d).hex()}));
+                  document.getElementById("color_row").style.backgroundColor = chroma.hex(hex).css();
+                  d3.selectAll("#slide,#picker").datum([hex,hsv,rgb]);
+                  updateColors( );
                 });
+               
+              function updateColors( ) {
+                var hex = d3.selectAll("#slide,#picker").datum()[0];
+                var hue = d3.selectAll("#slide,#picker").datum()[1].h;
+
+                colors = (new ColorScheme).from_hue( hue ) //chroma.hex(hex).hsv()[0] )
+                  //.from_hex( hex.replace("#", "" ).toUpperCase() )
+                  .scheme(d3.select("#scheme_selection").text().toLowerCase().replace(/[ \t\r\n]+/g,""))
+                  .colors().map(function(col){return "#" + col})
+
+                if (d3.select("#scheme_selection").text().toLowerCase().replace(/[ \t\r\n]+/g,"") != "monochromatic")  colors.splice(0,0,hex);
+
+                if (d3.select("#bez").node().checked){
+                  if( d3.select("#scheme_selection").text().toLowerCase().replace(/[ \t\r\n]+/g,"") != "monochromatic"){
+                    //if not monochromatic then will pick 0,3,4,...,length-1
+                      colors = colors.filter(function(col,i){
+                        if( (colors.length < 9 && i % 4 < 2 ) || (colors.length >= 9 && i % 4 === 0) ) { //|| i % 4 === 3 ) {
+                          return col;
+                        }
+                      })
+                  }
+                  colors = chroma.interpolate.bezier( colors )
+                }
+
+                var scale = chroma.scale(colors)
+                    .domain([0,+d3.select("#steps")[0][0].value],d3.select("#steps")[0][0].value)
+                    .correctLightness( d3.select("#coL").node().checked );
+
+                colors = d3.range(0,d3.select("#steps")[0][0].value,1)
+                  .map(function(d){return scale(d).hex()});
+                  
+
+                var palette = d3.selectAll("#palette").selectAll("div").data(colors);
+
+                palette
+                  .enter()
+                    .append("div")
+                palette
+                  .exit().remove();
+                
+                palette
+                  .style("display", "inline-block")
+                  .style("width",d3.format(".4%")(1/colors.length))
+                  .style("height",d3.select("#picker").style("height"))
+                  .style("background",function(d){return d;})
+              }
         </script>
   </body>
 </html> 
