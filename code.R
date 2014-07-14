@@ -5,6 +5,42 @@
 
 require(shiny)
 require(magrittr)
+require(rCharts)
+
+dp <- dPlot(
+  y = "y"
+  , x = "x"
+  , groups = "grp"
+  , data = data.frame(
+    x = format(as.Date(paste0("2000-",round(runif(1000,1,12)),"-01")),"%b")
+    , y = runif(1000,1000,10000)
+    , grp = LETTERS[c(rep(1,200),rep(2,200),rep(3,200),rep(4,200),rep(5,200))] 
+  )
+  , type = "bar"
+  , height = 600
+  , width = 1000
+  , xAxis = list( 
+    orderRule = sprintf("#![\'%s\']!#",capture.output(cat(format(as.Date(paste0("2000-",1:12,"-01")),"%b"),sep="\',\'")))
+   # ,grouporderRule = "grp"#sprintf("#![\'%s\']!#",capture.output(cat(LETTERS[1:5],sep="\',\'")))
+  )
+  #, yAxis = list( grouporderRule = "grp" )
+)# %T>% .$set(facet = list( x = "grp", removeAxes = T ))
+
+dp$setTemplate( afterScript = "
+<script>
+  function updateChartColors( colors ){
+    var dcolors = colors.map(function(col){
+      return new dimple.color(col);
+    })
+    {{chartId}}.forEach(function(cht){
+      Object.keys(cht._assignedColors).forEach(function(k,i){
+        cht._assignedColors[k] = dcolors[i];
+      })
+      cht.defaultColors = dcolors;
+      cht.draw();
+    })
+  }
+</script>")
 
 tags %$%
   html(
@@ -14,6 +50,7 @@ tags %$%
      , script(src = "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js")
      , script(src = "http://d3js.org/d3.v3.min.js")
      , script(src = "http://dimplejs.org/dist/dimple.v2.0.0.min.js")
+     , script(src = "http://timelyportfolio.github.io/rCharts_dimple/js/d3-grid.js")
      , script(src = "js/colorpicker.js")
      , script(src = "js/chroma.js")
      , script(src = "js/color-scheme.min.js")
@@ -27,29 +64,44 @@ tags %$%
           )
           ,div( class = "col-md-2"
             #,strong( "Scheme" )
-            ,div( class = "btn-group" 
-              ,button(
-                type = "button"
-                , id = "scheme_selection"
-                , class="btn btn-default dropdown-toggle"
-                , "data-toggle"="dropdown"
-                , "Monochromatic"
-                , span( class="caret" )
+            ,div( class = "row"
+              ,div( class = "btn-group" 
+                ,button(
+                  type = "button"
+                  , id = "scheme_selection"
+                  , class="btn btn-default dropdown-toggle"
+                  , "data-toggle"="dropdown"
+                  , "Monochromatic"
+                  , span( class="caret" )
+                )
+                ,ul( class="dropdown-menu", role="menu", id = "scheme_buttons"
+                  , li( a(href="#","Monochromatic") )
+                  , li( a(href="#","Contrast" ) )
+                  , li( a(href="#","Triade" ) )
+                  , li( a(href="#","Tetrade" ) )
+                  , li( a(href="#","Analogic" ) )
+                )
               )
-              ,ul( class="dropdown-menu", role="menu", id = "scheme_buttons"
-                , li( a(href="#","Monochromatic") )
-                , li( a(href="#","Contrast" ) )
-                , li( a(href="#","Triade" ) )
-                , li( a(href="#","Tetrade" ) )
-                , li( a(href="#","Analogic" ) )
-              )
-              , button(
-                id="add-complement"
-                , type="button"
-                , "data-toggle"="button"
-                , class="btn hide"
-                , "Add Complement"
-              )
+            )
+            ,div ( class = "row"
+              ,div( class = "btn-group" 
+                    ,button(
+                      type = "button"
+                      , id = "variation_selection"
+                      , class="btn btn-default dropdown-toggle"
+                      , "data-toggle"="dropdown"
+                      , "Default"
+                      , span( class="caret" )
+                    )
+                    ,ul( class="dropdown-menu", role="menu", id = "variation_buttons"
+                         , li( a(href="#","Default") )
+                         , li( a(href="#","Pastel" ) )
+                         , li( a(href="#","Soft" ) )
+                         , li( a(href="#","Light" ) )
+                         , li( a(href="#","Hard" ) )
+                         , li( a(href="#","Pale" ) )
+                    )
+               )
             )
             ,"Steps"
             ,input( id="steps", checked="checked", type="number", value="9", style="width: 40px;")
@@ -67,15 +119,23 @@ tags %$%
           )
         )
         ,div( id = "chart_row", class = "row"
-          #
+          ,paste0(noquote(capture.output(dp$show("inline"))),collapse="\n") %>% HTML
         )
       )
+      
       ,script(
         '
               d3.selectAll("input").on("change",function(){
                 updateColors(  );
               });
+
               d3.selectAll("#scheme_buttons li a").on("click",function(){
+                var selText = $(this).text();
+               $(this).parents(".btn-group").find(".dropdown-toggle").html(selText+" <span class=\'caret\'></span>");
+               updateColors( );
+              })
+
+              d3.selectAll("#variation_buttons li a").on("click",function(){
                 var selText = $(this).text();
                $(this).parents(".btn-group").find(".dropdown-toggle").html(selText+" <span class=\'caret\'></span>");
                updateColors( );
@@ -97,6 +157,7 @@ tags %$%
                 colors = (new ColorScheme).from_hue( hue ) //chroma.hex(hex).hsv()[0] )
                   //.from_hex( hex.replace("#", "" ).toUpperCase() )
                   .scheme(d3.select("#scheme_selection").text().toLowerCase().replace(/[ \\t\\r\\n]+/g,""))
+                  .variation(d3.select("#variation_selection").text().toLowerCase().replace(/[ \\t\\r\\n]+/g,""))
                   .colors().map(function(col){return "#" + col})
 
                 if (d3.select("#scheme_selection").text().toLowerCase().replace(/[ \\t\\r\\n]+/g,"") != "monochromatic")  colors.splice(0,0,hex);
@@ -134,6 +195,8 @@ tags %$%
                   .style("width",d3.format(".4%")(1/colors.length))
                   .style("height",d3.select("#picker").style("height"))
                   .style("background",function(d){return d;})
+
+                updateChartColors(colors);
               }
         ' %>% HTML
       )
