@@ -324,8 +324,7 @@ tags %$%
                   .style("width",d3.format(".4%")(1/colors.length))
                   .style("height",d3.select("#picker").style("height"))
                   .style("background",function(d){return d;})
-                  .append("title")
-                    .text(function(d){return d})
+                  .attr("title",function(d){return d})
 
                 updateChartColors(colors);
               }
