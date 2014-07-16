@@ -1,3 +1,6 @@
+#just an experiment
+#by the way, I do not recommend building a website this way
+
 #http://www.daviddurman.com/flexi-color-picker/#
 
 #https://vis4.net/blog/posts/mastering-multi-hued-color-scales/
@@ -17,8 +20,8 @@ dp <- dPlot(
     , grp = LETTERS[c(rep(1,200),rep(2,200),rep(3,200),rep(4,200),rep(5,200))] 
   )
   , type = "bar"
-  , height = 600
-  , width = 1000
+  , height = 500
+  , width = 900
   , xAxis = list( 
     orderRule = sprintf("#![\'%s\']!#",capture.output(cat(format(as.Date(paste0("2000-",1:12,"-01")),"%b"),sep="\',\'")))
    # ,grouporderRule = "grp"#sprintf("#![\'%s\']!#",capture.output(cat(LETTERS[1:5],sep="\',\'")))
@@ -34,7 +37,7 @@ dp$setTemplate( afterScript = "
     })
     {{chartId}}.forEach(function(cht){
       Object.keys(cht._assignedColors).forEach(function(k,i){
-        cht._assignedColors[k] = dcolors[i];
+        cht._assignedColors[k] = dcolors[i % dcolors.length];
       })
       cht.defaultColors = dcolors;
       cht.draw();
@@ -57,69 +60,187 @@ tags %$%
    , "</head>" %>% HTML
    , body(
       div( class = "container"
+        ,div( class="page-header"
+           , h1 ("rCharts + dimple Color Picker"
+             , small(
+               "built with "
+               ,a(
+                 href = "http://shiny.rstudio.com/articles/html-tags.html"
+                 , target = "_blank"
+                 ," Shiny Tags "
+               )
+             )
+           )
+        )
         ,div ( id = "color_row", class = "row"
           ,div( class = "col-md-3"
             ,div( id = "picker", class= "col-md-10", style = "height:200px")
             ,div( id = "slide", class= "col-md-2", style = "height:200px")
           )
           ,div( class = "col-md-2"
-            #,strong( "Scheme" )
-            ,div( class = "row"
-              ,div( class = "btn-group" 
-                ,button(
-                  type = "button"
-                  , id = "scheme_selection"
-                  , class="btn btn-default dropdown-toggle"
-                  , "data-toggle"="dropdown"
-                  , "Monochromatic"
-                  , span( class="caret" )
+            ,div ( class = "panel panel-default"
+              , div (class = "panel-heading"
+                ,h4(
+                  a( 
+                    href = "http://brianhann.com/color-scheme-js/"
+                    , target="_blank"
+                    , "color-scheme.js"
+                  )
                 )
-                ,ul( class="dropdown-menu", role="menu", id = "scheme_buttons"
-                  , li( a(href="#","Monochromatic") )
-                  , li( a(href="#","Contrast" ) )
-                  , li( a(href="#","Triade" ) )
-                  , li( a(href="#","Tetrade" ) )
-                  , li( a(href="#","Analogic" ) )
+              )
+              , div ( class = "panel-body"
+                , div ( class = "btn-group-vertical"
+                  ,div( class = "btn-group" 
+                    ,button(
+                      type = "button"
+                      , id = "scheme_selection"
+                      , class="btn btn-default dropdown-toggle"
+                      , "data-toggle"="dropdown"
+                      , "Monochromatic"
+                      , span( class="caret" )
+                    )
+                    ,ul( class="dropdown-menu", role="menu", id = "scheme_buttons"
+                      , li( a(href="#","Monochromatic") )
+                      , li( a(href="#","Contrast" ) )
+                      , li( a(href="#","Triade" ) )
+                      , li( a(href="#","Tetrade" ) )
+                      , li( a(href="#","Analogic" ) )
+                    )
+                  )
+                  ,div( class = "btn-group" 
+                        ,button(
+                          type = "button"
+                          , id = "variation_selection"
+                          , class="btn btn-default dropdown-toggle"
+                          , "data-toggle"="dropdown"
+                          , "Default"
+                          , span( class="caret" )
+                        )
+                        ,ul( class="dropdown-menu", role="menu", id = "variation_buttons"
+                             , li( a(href="#","Default") )
+                             , li( a(href="#","Pastel" ) )
+                             , li( a(href="#","Soft" ) )
+                             , li( a(href="#","Light" ) )
+                             , li( a(href="#","Hard" ) )
+                             , li( a(href="#","Pale" ) )
+                        )
+                   )
                 )
               )
             )
-            ,div ( class = "row"
-              ,div( class = "btn-group" 
-                    ,button(
-                      type = "button"
-                      , id = "variation_selection"
-                      , class="btn btn-default dropdown-toggle"
-                      , "data-toggle"="dropdown"
-                      , "Default"
-                      , span( class="caret" )
+          )
+          , div ( class = "col-md-2"
+            ,div( class="panel panel-default"
+              ,div( class = "panel-heading"
+                ,h4(
+                  a(
+                    href = "https://vis4.net/blog/posts/mastering-multi-hued-color-scales"
+                    , target="_blank"
+                    , "chroma.js"
+                  )
+                )
+              )
+              ,div( class = "panel-body"
+                #,div( class = "row"
+                  ,label( 
+                     "Steps"
+                    ,input( id="steps", checked="checked", type="number", value="9", style="width: 40px;")
+                  )
+                #)
+                #,div( class = "row"
+                  #,div( class = "col-md-11 col-md-offset-1"
+                    ,div( class = "checkbox"
+                      ,label(
+                        input( id="bez", type="checkbox")
+                        , "Bezier"
+                      )
                     )
-                    ,ul( class="dropdown-menu", role="menu", id = "variation_buttons"
-                         , li( a(href="#","Default") )
-                         , li( a(href="#","Pastel" ) )
-                         , li( a(href="#","Soft" ) )
-                         , li( a(href="#","Light" ) )
-                         , li( a(href="#","Hard" ) )
-                         , li( a(href="#","Pale" ) )
+                  #)
+                #)
+                #,div( class = "row"
+                  #,div( class = "col-md-11 col-md-offset-1"
+                    ,div( class = "checkbox"
+                      , label(
+                        input( id="coL", type="checkbox")
+                        , "Lightness"
+                      )
                     )
-               )
-            )
-            ,"Steps"
-            ,input( id="steps", checked="checked", type="number", value="9", style="width: 40px;")
-            ,label( class = "checkbox"
-              , input( id="bez", type="checkbox")
-              , "Bezier"
-            )
-            ,label( class = "checkbox"
-              , input( id="coL", type="checkbox")
-              , "Lightness"
+                  #)
+                #)
+              )
             )
           )
-          ,div(class = "col-md-7", id = "palette"
+          ,div(class = "col-md-5", id = "palette"
             #,
           )
         )
         ,div( id = "chart_row", class = "row"
-          ,paste0(noquote(capture.output(dp$show("inline"))),collapse="\n") %>% HTML
+          , div ( class = "col-md-3"
+            , "Select a color with the color picker above and then create
+             a palette with some nice javascript color libraries."
+            , hr()
+            , "This site was created entirely in R with rCharts, magrittr, and shiny based on
+            an"
+            , a(
+              href = "https://github.com/danielkrizian/rChartsDygraphs/issues/11"
+              , target= "_blank"
+              , "idea from Ramnath Vaidyanathan."
+            )
+            ," On the Javascript side of the world, we used "
+            , ul( class="nav nav-pills nav-stacked"
+              ,li(
+                a(
+                  span (class="badge", "1")
+                  , href = "http://www.daviddurman.com/flexi-color-picker/"
+                  , target = "_blank"
+                  ,"flexi-color-picker"
+                )
+              )
+              ,li(
+                a(
+                  span (class="badge", "2")
+                  , href = "https://vis4.net/blog/posts/mastering-multi-hued-color-scales"
+                  , target = "_blank"
+                  ,"chroma.js"
+                )
+              )
+              ,li(
+                a(
+                  span (class="badge", "3")
+                  , href = "http://brianhann.com/color-scheme-js/"
+                  , target = "_blank"
+                  ,"color-scheme.js"
+                )
+              )
+              ,li(
+                a(
+                  span (class="badge", "4")
+                  , href = "http://dimplejs.org/"
+                  , target = "_blank"
+                  ,"dimple.js"
+                )
+              )
+              ,li(
+                a(
+                  span (class="badge", "5")
+                  , href = "http://dimplejs.org/"
+                  , target = "_blank"
+                  ,"dimple.js"
+                )
+              )
+              ,li(
+                a(
+                  span (class="badge", "6")
+                  , href = "http://getbootstrap.com/"
+                  , target = "_blank"
+                  ,"bootstrap"
+                )
+              )
+            )
+          )
+          , div ( class = "col-md-9"
+            ,paste0(noquote(capture.output(dp$show("inline"))),collapse="\n") %>% HTML
+          )
         )
       )
       
