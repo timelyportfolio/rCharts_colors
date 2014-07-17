@@ -182,10 +182,16 @@ tags %$%
             #,
           )
         )
-        ,div( id = "chart_row", class = "row"
-          , div ( class = "col-md-3"
+        ,div( class = "row"
+          ,div ( class = "col-md-3"
             , "Select a color with the color picker above and then create
              a palette with some nice javascript color libraries."
+          )
+          ,div ( id = "palette_text", class = "col-md-5 col-md-offset-2"
+          )
+        )
+        ,div( id = "chart_row", class = "row"
+          , div ( class = "col-md-3"
             , hr()
             , "This site was created entirely in R with rCharts, magrittr, and shiny based on
             an"
@@ -325,6 +331,8 @@ tags %$%
                   .style("height",d3.select("#picker").style("height"))
                   .style("background",function(d){return d;})
                   .attr("title",function(d){return d})
+
+                d3.select("#palette_text").text( colors.join() );
 
                 updateChartColors(colors);
               }
